@@ -5,6 +5,7 @@ import { BlogCard } from "./components/BlogCard";
 import { BlogDetail } from "./components/BlogDetail";
 import { CreateBlogForm } from "./components/CreateBlogForm";
 import { Button } from "./components/ui/button";
+import { ArrowLeft } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,7 @@ function App() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [showDetailOverlay, setShowDetailOverlay] = useState(false);
 
   const {
     data: blogs,
@@ -89,7 +91,7 @@ function App() {
                 Create Blog
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white/90">
               <DialogHeader>
                 <DialogTitle>Create New Blog</DialogTitle>
               </DialogHeader>
@@ -101,7 +103,8 @@ function App() {
         <div
           className={`flex flex-col xl:flex-row gap-6 min-h-screen p-8 transition-opacity duration-700 ease-in-out ${isInitialLoad ? "opacity-0" : "opacity-100"}`}
         >
-          <div className="xl:w-1/4 space-y-3 h-full p-6 transition-opacity duration-500 ease-in-out">
+          {/* Desktop Layout - Sidebar */}
+          <div className="xl:w-1/4 space-y-3 h-full p-6 xl:block hidden transition-opacity duration-500 ease-in-out">
             <h2 className="text-xl font-semibold">All Blogs</h2>
             <div className="space-y-8 overflow-y-auto">
               {paginatedBlogs?.map((blog) => (
@@ -142,7 +145,53 @@ function App() {
             )}
           </div>
 
-          <div className="xl:w-3/4 p-4 h-full overflow-y-auto">
+          {/* Mobile/Tablet Layout - Expandable Cards */}
+          <div className="xl:hidden w-full space-y-3">
+            <h2 className="text-xl font-semibold mb-4">All Blogs</h2>
+            <div className="space-y-4">
+              {paginatedBlogs?.map((blog) => (
+                <BlogCard
+                  key={blog.id}
+                  blog={blog}
+                  onClick={() => {
+                    setSelectedBlogId(blog.id);
+                    setShowDetailOverlay(true);
+                  }}
+                  isSelected={false}
+                />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  ‹
+                </Button>
+
+                <span className="text-sm px-2 text-gray-600">
+                  Page {currentPage} of {totalPages}
+                </span>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  ›
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Detail Panel */}
+          <div className="xl:w-3/4 p-4 h-full overflow-y-auto xl:block hidden">
             <div className="transition-opacity duration-500 ease-in-out">
               {isBlogLoading ? (
                 <div className="flex items-center justify-center h-full">
@@ -160,6 +209,38 @@ function App() {
               )}
             </div>
           </div>
+
+          {/* Mobile Detail Overlay */}
+          {showDetailOverlay && (
+            <div className="fixed inset-0 z-50 xl:hidden">
+              <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowDetailOverlay(false)} />
+              <div className="relative h-full bg-white/90 overflow-y-auto">
+                <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center gap-4 z-10">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowDetailOverlay(false)}
+                    className="flex items-center gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to Blogs
+                  </Button>
+                </div>
+                <div className="p-4">
+                  {isBlogLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
+                        <p className="text-gray-600 text-sm">Loading...</p>
+                      </div>
+                    </div>
+                  ) : selectedBlog ? (
+                    <BlogDetail blog={selectedBlog} />
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
